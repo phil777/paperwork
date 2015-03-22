@@ -33,6 +33,7 @@ from paperwork.backend.img.page import ImgPage
 from paperwork.backend.util import image2surface
 from paperwork.backend.util import surface2image
 from paperwork.backend.util import mkdir_p
+from paperwork.backend.img.pdfgray import write_gray_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -55,39 +56,7 @@ class ImgToPdfDocExporter(object):
         return ['pdf']
 
     def __save(self, target_path, pages):
-        pdf_surface = cairo.PDFSurface(target_path,
-                                       self.__page_format[0],
-                                       self.__page_format[1])
-        pdf_context = cairo.Context(pdf_surface)
-
-        quality = float(self.__quality) / 100.0
-
-        for page in [self.doc.pages[x] for x in range(pages[0], pages[1])]:
-            img = page.img
-            if (img.size[0] < img.size[1]):
-                (x, y) = (min(self.__page_format[0], self.__page_format[1]),
-                          max(self.__page_format[0], self.__page_format[1]))
-            else:
-                (x, y) = (max(self.__page_format[0], self.__page_format[1]),
-                          min(self.__page_format[0], self.__page_format[1]))
-            pdf_surface.set_size(x, y)
-            new_size = (int(quality * img.size[0]),
-                        int(quality * img.size[1]))
-            img = img.resize(new_size, PIL.Image.ANTIALIAS)
-
-            scale_factor_x = x / img.size[0]
-            scale_factor_y = y / img.size[1]
-            scale_factor = min(scale_factor_x, scale_factor_y)
-
-            img_surface = image2surface(img)
-
-            pdf_context.identity_matrix()
-            pdf_context.scale(scale_factor, scale_factor)
-            pdf_context.set_source_surface(img_surface)
-            pdf_context.paint()
-
-            pdf_context.show_page()
-
+        write_gray_pdf(target_path, [self.doc.pages[x] for x in range(pages[0], pages[1])])
         return target_path
 
     def save(self, target_path):
